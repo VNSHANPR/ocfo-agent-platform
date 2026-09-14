@@ -1,9 +1,12 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Deploy Genie spaces from versioned serialized_space JSON
-# MAGIC Create-or-update each Genie space from the bundled `genie/*.json`, remapping the
-# MAGIC source catalog to this environment's catalog. Emits a key→space_id map as a task
-# MAGIC value for the supervisor step.
+# MAGIC # (FALLBACK) Deploy Genie spaces from versioned serialized_space JSON
+# MAGIC **Only needed on CLIs that don't yet support the native `genie_spaces` DABs resource.**
+# MAGIC The primary path declares Genie spaces natively in `databricks.yml` (engine: direct) and
+# MAGIC `bundle deploy` creates them. Use this notebook instead if your CLI reports
+# MAGIC "unknown field: genie_spaces": create-or-update each space from `genie/*.geniespace.json`,
+# MAGIC remap the source catalog, and emit a key→space_id map as a task value.
+# MAGIC (Reads genie/manifest.json.fallback.)
 
 # COMMAND ----------
 # MAGIC %pip install -U databricks-sdk
@@ -33,7 +36,7 @@ base = os.path.dirname(os.path.abspath("__file__"))
 gdir = os.path.join(base, "..", "genie")
 if not os.path.isdir(gdir):
     gdir = "../genie"
-manifest = json.load(open(os.path.join(gdir, "manifest.json")))
+manifest = json.load(open(os.path.join(gdir, "manifest.json.fallback")))
 
 # Existing spaces by title (create-or-update).
 existing = {s["title"]: s["space_id"] for s in

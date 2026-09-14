@@ -1,8 +1,8 @@
 resources:
   jobs:
     ocfo_agent_platform_deploy:
-      name: "[${bundle.target}] oCFO Agent Platform — deploy data, genie & supervisor"
-      description: "End-to-end: build the data layer (tools + metric views), deploy the Genie spaces, then create/update the Multi-Agent Supervisor. Promotes the whole stack per environment."
+      name: "[${bundle.target}] oCFO Agent Platform — deploy data & supervisor"
+      description: "Builds the data layer (tools + metric views) then creates/updates the Multi-Agent Supervisor over the bundle's Genie spaces. Genie spaces themselves are native `genie_spaces` resources deployed by `bundle deploy`."
       tasks:
         - task_key: deploy_data_layer
           notebook_task:
@@ -11,27 +11,20 @@ resources:
               catalog: ${var.catalog}
           environment_key: default
 
-        - task_key: deploy_genie_spaces
-          depends_on:
-            - task_key: deploy_data_layer
-          notebook_task:
-            notebook_path: ../src/deploy_genie_spaces.py
-            base_parameters:
-              catalog: ${var.catalog}
-              source_catalog: ${var.source_catalog}
-              warehouse_id: ${var.warehouse_id}
-              genie_parent_path: ${var.genie_parent_path}
-          environment_key: default
-
         - task_key: deploy_supervisor
           depends_on:
-            - task_key: deploy_genie_spaces
+            - task_key: deploy_data_layer
           notebook_task:
             notebook_path: ../src/create_supervisor.py
             base_parameters:
               catalog: ${var.catalog}
               supervisor_name: ${var.supervisor_name}
               ka_tile_id: ${var.ka_tile_id}
+              # Genie space ids come straight from the native genie_spaces resources.
+              genie_ocfo: ${resources.genie_spaces.ocfo.id}
+              genie_hr: ${resources.genie_spaces.hr.id}
+              genie_concur: ${resources.genie_spaces.travel_expense.id}
+              genie_ariba: ${resources.genie_spaces.supplier.id}
           environment_key: default
 
       environments:

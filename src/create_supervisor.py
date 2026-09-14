@@ -11,18 +11,20 @@
 # COMMAND ----------
 import os, json, yaml
 
-dbutils.widgets.text("catalog", "de_cert_classic_catalog")
-dbutils.widgets.text("supervisor_name", "oCFO Enterprise Supervisor")
-dbutils.widgets.text("ka_tile_id", "")
-CAT   = dbutils.widgets.get("catalog")
-NAME  = dbutils.widgets.get("supervisor_name")
+for _w in ("catalog", "supervisor_name", "ka_tile_id", "genie_ocfo", "genie_hr", "genie_concur", "genie_ariba"):
+    dbutils.widgets.text(_w, "")
+CAT   = dbutils.widgets.get("catalog") or "de_cert_classic_catalog"
+NAME  = dbutils.widgets.get("supervisor_name") or "oCFO Enterprise Supervisor"
 KA    = dbutils.widgets.get("ka_tile_id")
 
-# Genie ids from the upstream deploy_genie_spaces task.
-try:
-    genie_ids = json.loads(dbutils.jobs.taskValues.get(taskKey="deploy_genie_spaces", key="genie_ids"))
-except Exception as e:
-    print("no upstream genie_ids task value:", e); genie_ids = {}
+# Genie space ids are injected from the native genie_spaces resources
+# (${resources.genie_spaces.<key>.id}) via the job's base_parameters.
+genie_ids = {
+    "ocfo":   dbutils.widgets.get("genie_ocfo"),
+    "hr":     dbutils.widgets.get("genie_hr"),
+    "concur": dbutils.widgets.get("genie_concur"),
+    "ariba":  dbutils.widgets.get("genie_ariba"),
+}
 
 base = os.path.dirname(os.path.abspath("__file__"))
 cfg_path = os.path.join(base, "..", "config", "supervisor_instructions.yml")

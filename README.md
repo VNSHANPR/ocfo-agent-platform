@@ -8,18 +8,19 @@ so it promotes cleanly across **dev → preprod → prod** workspaces from one p
 | Layer | Contents |
 |-------|----------|
 | **Data layer** | `agent_tools` UC functions (`fx_convert`, `cash_conversion_cycle`, `fctg_fiscal_period`, `pct_change`) + 6 certified metric views (oCFO, HR, Concur, Ariba) |
-| **Genie layer** | 4 curated Genie spaces created from versioned `serialized_space` JSON (oCFO, HR/Workday, Concur, Ariba) |
+| **Genie layer** | 4 curated Genie spaces declared as **native `genie_spaces` DABs resources** (engine: `direct`), each backed by a versioned `*.geniespace.json` |
 | **Supervisor** | Multi-Agent Supervisor wiring the 4 Genie spaces + the Knowledge Assistant (as a direct subagent) + the UC-function tools, with routing rules & examples |
 
 ```
-databricks.yml                       # bundle, variables, dev/preprod/prod targets
+databricks.yml                       # bundle (engine: direct), variables, native genie_spaces resources, dev/preprod/prod targets
 config/supervisor_instructions.yml   # master prompt + routing rules + agent descriptions + examples (versioned)
-genie/manifest.json                  # key → title/description/file for each Genie space
-genie/genie_*.json                   # exported serialized_space for each space (IaC)
+genie/*.geniespace.json              # versioned serialized definition for each Genie space (file_path of each genie_spaces resource)
 src/deploy_data_layer.py             # UC functions + metric views (catalog-parameterized, idempotent)
-src/deploy_genie_spaces.py           # create-or-update Genie spaces from JSON, remap catalog, emit ids
-src/create_supervisor.py             # assemble + create/update the supervisor from config + ids + KA
-resources/ocfo_platform.job.yml      # job: data layer → genie spaces → supervisor
+src/create_supervisor.py             # assemble + create/update the supervisor from config + resolved genie ids + KA
+resources/ocfo_platform.job.yml      # job: data layer → supervisor (Genie spaces deploy declaratively)
+# fallback (older CLIs only):
+genie/manifest.json.fallback         # key → title/description/file map
+src/deploy_genie_spaces.py           # notebook that create-or-updates Genie spaces via REST when genie_spaces isn't supported
 ```
 
 ## Promotion model
@@ -50,8 +51,14 @@ databricks bundle deploy --target prod    && databricks bundle run ocfo_agent_pl
 - A SQL warehouse id in `warehouse_id`.
 
 ## Notes
-- No native DABs resource exists for Genie spaces, so they are deployed via the
-  serialized-JSON + `/api/2.0/genie/spaces` create-or-update pattern in `deploy_genie_spaces.py`.
-- The programmatic Multi-Agent Supervisor API (Agent Bricks) is used when available in the
-  target workspace; otherwise `create_supervisor.py` prints the resolved spec for one-time
-  UI creation. MLflow tracing + evaluation of the supervisor is a companion notebook.
+- **Genie spaces are native `genie_spaces` DABs resources** under the `direct` engine — they
+  deploy with `bundle deploy` and the supervisor step reads their ids via
+  `${resources.genie_spaces.<key>.id}`. This requires a **recent Databricks CLI**; on older
+  CLIs (e.g. v1.0.0) `bundle validate` reports `unknown field: genie_spaces`. In that case,
+  remove the `genie_spaces` block + `engine: direct`, and run the fallback notebook
+  `src/deploy_genie_spaces.py` (add it back as the first job task) which create-or-updates the
+  spaces via `/api/2.0/genie/spaces`.
+- The Multi-Agent Supervisor is the **managed Agent Bricks MAS** (there is no native DABs
+  resource for it); `create_supervisor.py` creates it via the Agent Bricks API when available,
+  otherwise prints the resolved spec for one-time UI creation. MLflow tracing + evaluation of
+  the supervisor is a companion notebook.

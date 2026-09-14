@@ -3,18 +3,21 @@
 # One project that ships the whole agentic stack as IaC and promotes it
 # across dev → preprod → prod:
 #   • Data layer  — UC function tools + certified metric views
-#   • Genie layer — 4 curated Genie spaces (versioned serialized_space JSON)
+#   • Genie layer — 4 Genie spaces declared as native `genie_spaces` resources
 #   • Supervisor  — Multi-Agent Supervisor wiring the Genies + KA + tools
+#
+# NOTE: `genie_spaces` is a native DABs resource only under the `direct`
+# engine and requires a recent Databricks CLI (not recognized on v1.0.0 —
+# it emits "unknown field: genie_spaces"). If your CLI is older, use the
+# notebook-based fallback (see src/deploy_genie_spaces.py + README).
 # ============================================================
 bundle:
   name: ocfo_agent_platform
+  engine: direct           # required for the genie_spaces resource
 
 variables:
   catalog:
     description: Target Unity Catalog for this environment
-    default: de_cert_classic_catalog
-  source_catalog:
-    description: Catalog the exported Genie JSON was authored against (remapped to `catalog` on deploy)
     default: de_cert_classic_catalog
   warehouse_id:
     description: SQL warehouse for the data layer and Genie spaces
@@ -25,9 +28,42 @@ variables:
   supervisor_name:
     description: Name of the Multi-Agent Supervisor
     default: "oCFO Enterprise Supervisor"
-  genie_parent_path:
-    description: Workspace folder where Genie spaces are created
-    default: /Workspace/Shared/ocfo_agent_platform/genie_spaces
+
+resources:
+  # ---- Genie spaces (native, file-backed serialized definitions) ----
+  genie_spaces:
+    ocfo:
+      title: "Office of the CFO — oCFO"
+      description: "Group finance: P&L, TTV, revenue, margin, EBITDA, NPAT, cash, working capital (DSO/DPO/DIO/CCC), FX and regional performance."
+      warehouse_id: ${var.warehouse_id}
+      file_path: ./genie/ocfo.geniespace.json
+      permissions:
+        - level: CAN_RUN
+          group_name: users
+    hr:
+      title: "HR & Workforce — Workday"
+      description: "Headcount, hiring, attrition, tenure and compensation by department, region and job level."
+      warehouse_id: ${var.warehouse_id}
+      file_path: ./genie/hr.geniespace.json
+      permissions:
+        - level: CAN_RUN
+          group_name: users
+    travel_expense:
+      title: "Travel & Expense Spend — Concur"
+      description: "Employee travel and expense spend: total and out-of-policy spend, transactions, merchants and category/region breakdowns."
+      warehouse_id: ${var.warehouse_id}
+      file_path: ./genie/travel_expense.geniespace.json
+      permissions:
+        - level: CAN_RUN
+          group_name: users
+    supplier:
+      title: "Supplier & Procurement — Ariba"
+      description: "Supplier spend, addressable spend, realized savings, supplier risk and contract renewals."
+      warehouse_id: ${var.warehouse_id}
+      file_path: ./genie/supplier.geniespace.json
+      permissions:
+        - level: CAN_RUN
+          group_name: users
 
 include:
   - resources/*.yml
