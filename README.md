@@ -9,10 +9,6 @@ so it promotes cleanly across **dev → preprod → prod** workspaces from one p
 > `databricks version`; upgrade with `brew upgrade databricks` (or reinstall the latest).
 > On a CLI without `genie_spaces` support, use the fallback in `src/deploy_genie_spaces.py`.
 
-## Architecture
-
-![oCFO Agent Platform architecture](docs/architecture.svg)
-
 ## What it deploys
 
 | Layer | Contents |
