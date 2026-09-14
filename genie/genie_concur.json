@@ -1,0 +1,410 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "1a80274b54df44699e3965a0f4bb0267",
+        "question": [
+          "How has travel spend trended by month?"
+        ]
+      },
+      {
+        "id": "46924c3d01ef4487b6cbd6f9a7182200",
+        "question": [
+          "What percent of spend is out of policy?"
+        ]
+      },
+      {
+        "id": "4f82e5effde449a38cca1aaadd1b3dbf",
+        "question": [
+          "Which region spends the most on travel?"
+        ]
+      },
+      {
+        "id": "62b000a10c214133b7e87908512fe779",
+        "question": [
+          "What is our total travel spend by category?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "de_cert_classic_catalog.concur_spend.expense_line_items",
+        "column_configs": [
+          {
+            "column_name": "amount_usd",
+            "description": [
+              "Dollar amount of this single line item in USD."
+            ]
+          },
+          {
+            "column_name": "category",
+            "description": [
+              "Expense type (e.g. Airfare, Hotel, Meals, Ground Transport, Car Rental, Conference)."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "currency",
+            "description": [
+              "Original currency code (always USD in this dataset)."
+            ]
+          },
+          {
+            "column_name": "department",
+            "description": [
+              "Department of the employee who filed the expense (e.g. Engineering, Sales)."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "expense_date",
+            "description": [
+              "Date the expense was incurred. Range: 2025-03-19 to 2026-09-13."
+            ]
+          },
+          {
+            "column_name": "line_id",
+            "description": [
+              "Unique identifier for a single expense line item within a report."
+            ]
+          },
+          {
+            "column_name": "merchant",
+            "description": [
+              "Vendor or merchant name for the expense."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "policy_compliant",
+            "description": [
+              "True if this line item is within corporate travel policy; false if it violates policy."
+            ]
+          },
+          {
+            "column_name": "receipt_attached",
+            "description": [
+              "True if a receipt was uploaded for this line item; false otherwise."
+            ]
+          },
+          {
+            "column_name": "region",
+            "description": [
+              "Geographic region where the expense was incurred (e.g. AMER, EMEA, APAC)."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "report_id",
+            "description": [
+              "FK to expense_reports. Groups line items into the parent report."
+            ]
+          }
+        ]
+      },
+      {
+        "identifier": "de_cert_classic_catalog.concur_spend.expense_reports",
+        "column_configs": [
+          {
+            "column_name": "days_to_approve",
+            "description": [
+              "Number of days from submission to final approval decision (0–11)."
+            ]
+          },
+          {
+            "column_name": "department",
+            "description": [
+              "Department of the submitting employee."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "employee_id",
+            "description": [
+              "Unique identifier for the employee who submitted the report."
+            ]
+          },
+          {
+            "column_name": "out_of_policy_flag",
+            "description": [
+              "True if any line item in the report violates travel policy."
+            ]
+          },
+          {
+            "column_name": "region",
+            "description": [
+              "Geographic region of the submitting employee."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "report_id",
+            "description": [
+              "Unique identifier for the expense report. PK; join to expense_line_items.report_id."
+            ]
+          },
+          {
+            "column_name": "status",
+            "description": [
+              "Approval status of the report (Approved, Rejected, or Pending)."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "submit_date",
+            "description": [
+              "Date the report was submitted for approval."
+            ]
+          },
+          {
+            "column_name": "total_amount_usd",
+            "description": [
+              "Sum of all line item amounts in the report, in USD."
+            ]
+          }
+        ]
+      },
+      {
+        "identifier": "de_cert_classic_catalog.concur_spend.mv_travel_spend"
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "861a9c0983dc4193b692dc731adcc4c1",
+        "content": [
+          "This agent answers employee travel & expense questions from simulated SAP Concur data.\n",
+          "\n",
+          "Table routing:\n",
+          "- Use mv_travel_spend for total spend, out-of-policy spend/%, transaction counts, and average transaction amount — sliceable by Month, Category, and Region.\n",
+          "- Use expense_reports for report-level fields: approval status, out-of-policy flag, days to approve, and employee ID.\n",
+          "- Use expense_line_items for line-item detail: individual merchant, amount, receipt status, and policy compliance.\n",
+          "\n",
+          "Business rules:\n",
+          "- Out of Policy % is a pre-computed ratio in the metric view. Always query it with MEASURE(`Out of Policy %`). Never sum or average raw percentage values — the MEASURE function re-aggregates correctly at any grain.\n",
+          "- All monetary amounts are in USD."
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "0a12825c16da4b909eb08a3a68cacd67",
+        "question": [
+          "Total spend and out-of-policy % by category"
+        ],
+        "sql": [
+          "SELECT `Category`, ROUND(MEASURE(`Total Spend`)) AS spend, ROUND(MEASURE(`Out of Policy %`),1) AS oop_pct FROM de_cert_classic_catalog.concur_spend.mv_travel_spend GROUP BY ALL ORDER BY 2 DESC"
+        ]
+      },
+      {
+        "id": "36da96fa55454c5492df9130dbeb0f8a",
+        "question": [
+          "Monthly travel spend trend"
+        ],
+        "sql": [
+          "SELECT `Month`, ROUND(MEASURE(`Total Spend`)) AS spend FROM de_cert_classic_catalog.concur_spend.mv_travel_spend GROUP BY ALL ORDER BY 1"
+        ]
+      },
+      {
+        "id": "f31a1819d9ec4724be8d277ed832ca59",
+        "question": [
+          "Top merchants by spend"
+        ],
+        "sql": [
+          "SELECT merchant, ROUND(SUM(amount_usd)) AS spend FROM de_cert_classic_catalog.concur_spend.expense_line_items GROUP BY ALL ORDER BY 2 DESC LIMIT 10"
+        ]
+      }
+    ],
+    "join_specs": [
+      {
+        "id": "01f1afe9e00f1156a510db90ce864901",
+        "left": {
+          "identifier": "de_cert_classic_catalog.concur_spend.expense_line_items"
+        },
+        "right": {
+          "identifier": "de_cert_classic_catalog.concur_spend.expense_reports"
+        },
+        "sql": [
+          "de_cert_classic_catalog.concur_spend.expense_line_items.report_id = de_cert_classic_catalog.concur_spend.expense_reports.report_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ],
+        "comment": [
+          "expense_line_items ↔ expense_reports"
+        ]
+      }
+    ],
+    "sql_snippets": {
+      "measures": [
+        {
+          "id": "01f1afe9e0141a1db0beb0d633fc75c5",
+          "sql": [
+            "ROUND(SUM(CASE WHEN NOT expense_line_items.receipt_attached THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1)"
+          ],
+          "display_name": "Receipt missing rate"
+        },
+        {
+          "id": "01f1afe9e0141ceaada11de9f5b9b86d",
+          "sql": [
+            "SUM(CASE WHEN NOT expense_line_items.policy_compliant THEN 1 ELSE 0 END)"
+          ],
+          "display_name": "Out-of-policy line item count"
+        }
+      ]
+    }
+  },
+  "benchmarks": {
+    "questions": [
+      {
+        "id": "e943c4c1cf594f54b3ad500c1e963948",
+        "question": [
+          "How many expense reports were rejected?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT COUNT(*) FROM de_cert_classic_catalog.concur_spend.expense_reports WHERE status='Rejected'"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "c25bdda257244fd7b4e0a77ba7260f65",
+        "question": [
+          "What percent of spend is out of policy overall?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT ROUND(MEASURE(`Out of Policy %`),1) FROM de_cert_classic_catalog.concur_spend.mv_travel_spend"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b42bf794100b4bf8adedd8c767f334e1",
+        "question": [
+          "Monthly travel spend for the last 6 months?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Month`, ROUND(MEASURE(`Total Spend`)) FROM de_cert_classic_catalog.concur_spend.mv_travel_spend WHERE `Month` >= add_months((SELECT MAX(`Month`) FROM de_cert_classic_catalog.concur_spend.mv_travel_spend), -5) GROUP BY ALL ORDER BY 1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "af2e95a8181342d7b685d347902ae064",
+        "question": [
+          "Total out-of-policy spend by region?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Region`, ROUND(MEASURE(`Out of Policy Spend`)) FROM de_cert_classic_catalog.concur_spend.mv_travel_spend GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "58c164b11c69403db80b974dfab7bbaa",
+        "question": [
+          "Where are we overspending and how do we tighten policy?"
+        ],
+        "answer": [
+          {
+            "format": "SQL"
+          }
+        ],
+        "evaluation_note": [
+          "Agent-mode: must investigate across relevant dimensions, cite supporting queries, and state a specific answer with evidence."
+        ]
+      },
+      {
+        "id": "4a8b22c577e84a8dad64d0e56420d2c0",
+        "question": [
+          "Share of line items missing receipts?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT ROUND(SUM(CASE WHEN NOT receipt_attached THEN 1 ELSE 0 END)*100.0/COUNT(*),1) FROM de_cert_classic_catalog.concur_spend.expense_line_items"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3f441e714db3481aabe3067b35ada84d",
+        "question": [
+          "What is total travel spend by category?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Category`, ROUND(MEASURE(`Total Spend`)) FROM de_cert_classic_catalog.concur_spend.mv_travel_spend GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1cf6fa7f66854fc3aeab29a5e276fc4c",
+        "question": [
+          "Which region has the highest travel spend?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Region`, ROUND(MEASURE(`Total Spend`)) FROM de_cert_classic_catalog.concur_spend.mv_travel_spend GROUP BY ALL ORDER BY 2 DESC LIMIT 1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1852cbfa8bc44c3a9331ddb7db527cef",
+        "question": [
+          "What is the average transaction amount by category?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Category`, ROUND(MEASURE(`Avg Transaction`),2) FROM de_cert_classic_catalog.concur_spend.mv_travel_spend GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0202aaa00dc84941b31a22f1d2eb6354",
+        "question": [
+          "Top 10 merchants by spend?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT merchant, ROUND(SUM(amount_usd)) FROM de_cert_classic_catalog.concur_spend.expense_line_items GROUP BY ALL ORDER BY 2 DESC LIMIT 10"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

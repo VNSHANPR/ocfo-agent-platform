@@ -1,0 +1,241 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "46ea889e6230402d829f1aa0e04ea971",
+        "question": [
+          "What is our attrition rate by department?"
+        ]
+      },
+      {
+        "id": "5895676b3d484f5aa48689bbe7ca1148",
+        "question": [
+          "What is average total compensation by job level?"
+        ]
+      },
+      {
+        "id": "b88640ea3d0c40d48db4a5c46e21d7ef",
+        "question": [
+          "How has headcount trended over the last 12 months?"
+        ]
+      },
+      {
+        "id": "fc5ff2e130c547fcbb987effa228c334",
+        "question": [
+          "Which region has the most open requisitions?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "de_cert_classic_catalog.workday_hr.employees"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.workday_hr.mv_compensation"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.workday_hr.mv_headcount"
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "1802037e03604da79c415595a0d1a0c0",
+        "content": [
+          "This agent answers HR/workforce questions from simulated Workday data.Use mv_headcount for headcount, hires, terminations, attrition and open requisitions by month/department/region.Use mv_compensation for base, total comp and comp-ratio by department and job level.Attrition and comp-ratio are averages/weighted ratios — do not sum them.For point-in-time headcount, filter mv_headcount to a single month."
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "4cc84977b5dd421aa0de0b1226a26a7a",
+        "question": [
+          "Attrition rate by department"
+        ],
+        "sql": [
+          "SELECT `Department`, ROUND(MEASURE(`Avg Attrition Rate %`),1) AS attrition_pct FROM de_cert_classic_catalog.workday_hr.mv_headcount GROUP BY ALL ORDER BY 2 DESC"
+        ]
+      },
+      {
+        "id": "9051cfcfacce4f2d89bb725831c29faf",
+        "question": [
+          "Headcount trend by month"
+        ],
+        "sql": [
+          "SELECT `Month`, MEASURE(`Headcount`) AS headcount FROM de_cert_classic_catalog.workday_hr.mv_headcount GROUP BY ALL ORDER BY 1"
+        ]
+      },
+      {
+        "id": "daf7adeec3384c8788d19107f89966af",
+        "question": [
+          "Average total compensation by job level"
+        ],
+        "sql": [
+          "SELECT `Job Level`, ROUND(MEASURE(`Avg Total Comp`)) AS avg_total_comp FROM de_cert_classic_catalog.workday_hr.mv_compensation GROUP BY ALL ORDER BY 2 DESC"
+        ]
+      }
+    ]
+  },
+  "benchmarks": {
+    "questions": [
+      {
+        "id": "ef82af41ca78458e8f4c2ce619aff63e",
+        "question": [
+          "Total hires vs terminations in the last 12 months?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT MEASURE(`Hires`) AS hires, MEASURE(`Terminations`) AS terms FROM de_cert_classic_catalog.workday_hr.mv_headcount WHERE `Month` >= add_months((SELECT MAX(`Month`) FROM de_cert_classic_catalog.workday_hr.mv_headcount), -11)"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "e9ba4639bfb24f6fbd6b2748886e5a59",
+        "question": [
+          "Average comp ratio by job level?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Job Level`, ROUND(MEASURE(`Avg Comp Ratio`),2) FROM de_cert_classic_catalog.workday_hr.mv_compensation GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d4b46dfa93d84c848a306a6682841cc9",
+        "question": [
+          "How many open requisitions by region?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Region`, MEASURE(`Open Requisitions`) FROM de_cert_classic_catalog.workday_hr.mv_headcount GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cb679eef9ffc44aba26fa42dbe3329f7",
+        "question": [
+          "Which department has the highest average base salary?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Department`, ROUND(MEASURE(`Avg Base Salary`)) FROM de_cert_classic_catalog.workday_hr.mv_headcount GROUP BY ALL ORDER BY 2 DESC LIMIT 1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b56bfd1e886640c8b16aef56a01474f1",
+        "question": [
+          "Headcount by region in the latest month?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Region`, MEASURE(`Headcount`) FROM de_cert_classic_catalog.workday_hr.mv_headcount WHERE `Month`=(SELECT MAX(`Month`) FROM de_cert_classic_catalog.workday_hr.mv_headcount) GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "a49cb4faa8fb4ca3a9fd04f938ca7f08",
+        "question": [
+          "What is driving attrition and how should we respond?"
+        ],
+        "answer": [
+          {
+            "format": "SQL"
+          }
+        ],
+        "evaluation_note": [
+          "Agent-mode: must investigate across relevant dimensions, cite supporting queries, and state a specific answer with evidence."
+        ]
+      },
+      {
+        "id": "a0a5ba0e6e144b86b701c09ae668cbb5",
+        "question": [
+          "What is the attrition rate by department?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Department`, ROUND(MEASURE(`Avg Attrition Rate %`),1) FROM de_cert_classic_catalog.workday_hr.mv_headcount GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "8af2b24e73cf42968ec27243bf291207",
+        "question": [
+          "Give me an executive summary of workforce health."
+        ],
+        "answer": [
+          {
+            "format": "SQL"
+          }
+        ],
+        "evaluation_note": [
+          "Agent-mode: must investigate across relevant dimensions, cite supporting queries, and state a specific answer with evidence."
+        ]
+      },
+      {
+        "id": "6979159563be473e94b82d5131679e53",
+        "question": [
+          "What is total headcount in the latest month?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT MEASURE(`Headcount`) FROM de_cert_classic_catalog.workday_hr.mv_headcount WHERE `Month` = (SELECT MAX(`Month`) FROM de_cert_classic_catalog.workday_hr.mv_headcount)"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "59381823891e48a0946566a9ca0caf5f",
+        "question": [
+          "Average total compensation by job level?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Job Level`, ROUND(MEASURE(`Avg Total Comp`)) FROM de_cert_classic_catalog.workday_hr.mv_compensation GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "47c2d7548619419ab7faccb05c6452ac",
+        "question": [
+          "How many employees are currently active?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT COUNT(*) FROM de_cert_classic_catalog.workday_hr.employees WHERE status='Active'"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

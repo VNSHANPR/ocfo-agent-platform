@@ -1,0 +1,60 @@
+# ============================================================
+# oCFO Agent Platform — consolidated Declarative Automation Bundle
+# One project that ships the whole agentic stack as IaC and promotes it
+# across dev → preprod → prod:
+#   • Data layer  — UC function tools + certified metric views
+#   • Genie layer — 4 curated Genie spaces (versioned serialized_space JSON)
+#   • Supervisor  — Multi-Agent Supervisor wiring the Genies + KA + tools
+# ============================================================
+bundle:
+  name: ocfo_agent_platform
+
+variables:
+  catalog:
+    description: Target Unity Catalog for this environment
+    default: de_cert_classic_catalog
+  source_catalog:
+    description: Catalog the exported Genie JSON was authored against (remapped to `catalog` on deploy)
+    default: de_cert_classic_catalog
+  warehouse_id:
+    description: SQL warehouse for the data layer and Genie spaces
+    default: fdc482eac00fde0a
+  ka_tile_id:
+    description: Knowledge Assistant tile id (FCTG financial-results docs) — added to the supervisor as a subagent
+    default: ""
+  supervisor_name:
+    description: Name of the Multi-Agent Supervisor
+    default: "oCFO Enterprise Supervisor"
+  genie_parent_path:
+    description: Workspace folder where Genie spaces are created
+    default: /Workspace/Shared/ocfo_agent_platform/genie_spaces
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://fevm-de-cert-classic.cloud.databricks.com
+
+  preprod:
+    mode: production
+    workspace:
+      host: https://fevm-de-cert-classic.cloud.databricks.com
+      root_path: /Workspace/Users/vinay.bhatt@databricks.com/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: de_cert_classic_catalog
+      supervisor_name: "oCFO Enterprise Supervisor (preprod)"
+    # In a real multi-workspace setup, point host + catalog at the preprod workspace.
+
+  prod:
+    mode: production
+    workspace:
+      host: https://fevm-de-cert-classic.cloud.databricks.com
+      root_path: /Workspace/Users/vinay.bhatt@databricks.com/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: de_cert_classic_catalog
+      supervisor_name: "oCFO Enterprise Supervisor"
+    # In a real multi-workspace setup, point host + catalog at the prod workspace.

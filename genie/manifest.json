@@ -1,0 +1,12 @@
+{
+  "spaces": [
+    {"key": "ocfo",   "file": "genie_ocfo.json",   "title": "Office of the CFO — oCFO",
+     "description": "Group finance for FCTG: P&L, TTV, revenue, margins, EBITDA, NPAT, cash, working capital (DSO/DPO/DIO/CCC), FX and regional performance."},
+    {"key": "hr",     "file": "genie_hr.json",     "title": "HR & Workforce — Workday",
+     "description": "HR and workforce: headcount, hiring, attrition, tenure and compensation by department, region and job level. Source: Workday."},
+    {"key": "concur", "file": "genie_concur.json", "title": "Travel & Expense Spend — Concur",
+     "description": "Employee travel and expense spend: total and out-of-policy spend, transactions, merchants and category/region breakdowns. Source: SAP Concur."},
+    {"key": "ariba",  "file": "genie_ariba.json",  "title": "Supplier & Procurement — Ariba",
+     "description": "Supplier and procurement: spend, addressable spend, realized savings, supplier risk and contract renewals. Source: SAP Ariba."}
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "26fba8f4f0d946d3999bc21a44848e7d",
+        "question": [
+          "How much have we saved versus target?"
+        ]
+      },
+      {
+        "id": "3c0963dfc42240d1b5cdac6354fe79dc",
+        "question": [
+          "What is our total supplier spend by category?"
+        ]
+      },
+      {
+        "id": "b5a38df9b43b4555894ca7a63b80b851",
+        "question": [
+          "What share of spend is with high-risk suppliers?"
+        ]
+      },
+      {
+        "id": "fc4ebadc3a4043e6ae235fed141f34e9",
+        "question": [
+          "Which suppliers have contracts due for renewal?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "de_cert_classic_catalog.ariba_supplier.contracts"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.ariba_supplier.mv_supplier_spend"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.ariba_supplier.suppliers"
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "2ae2da435db4434ab014a5172f7d7145",
+        "content": [
+          "This agent answers supplier & procurement questions from simulated SAP Ariba data.Use mv_supplier_spend for spend, addressable spend, realized savings and savings % by month/category/region/risk tier/supplier.Savings % and Addressable % are ratios — do not sum them.Use suppliers for master data (risk tier, preferred, contract status) and contracts for contract values and savings targets."
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "43cfd705921d4c88b07b33d853c95a92",
+        "question": [
+          "Spend by risk tier"
+        ],
+        "sql": [
+          "SELECT `Risk Tier`, ROUND(MEASURE(`Spend`)) AS spend FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend GROUP BY ALL ORDER BY 2 DESC"
+        ]
+      },
+      {
+        "id": "b5c60a386fc447bab066997e3bd12e7c",
+        "question": [
+          "Contracts due for renewal"
+        ],
+        "sql": [
+          "SELECT contract_id, supplier_id, contract_value_usd, end_date FROM de_cert_classic_catalog.ariba_supplier.contracts WHERE status='Renewal Due' ORDER BY end_date"
+        ]
+      },
+      {
+        "id": "ec84b6201f4748e4a6ae124a38e1f791",
+        "question": [
+          "Spend and savings % by category"
+        ],
+        "sql": [
+          "SELECT `Category`, ROUND(MEASURE(`Spend`)) AS spend, ROUND(MEASURE(`Savings %`),1) AS savings_pct FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend GROUP BY ALL ORDER BY 2 DESC"
+        ]
+      }
+    ]
+  },
+  "benchmarks": {
+    "questions": [
+      {
+        "id": "cfc5541672aa4be0bb45bef90a4ea8a2",
+        "question": [
+          "Addressable spend % by category?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Category`, ROUND(MEASURE(`Addressable %`),1) FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b25b1f3d6b8f47aabded836b237225a4",
+        "question": [
+          "What share of spend is with high-risk suppliers?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Risk Tier`, ROUND(MEASURE(`Spend`)) FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "9d203c0d06b2456d9e52975a89029916",
+        "question": [
+          "Total realized savings?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT ROUND(MEASURE(`Realized Savings`)) FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "983e2f8e7a7d4e739b643e5c98e559be",
+        "question": [
+          "Spend by region?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Region`, ROUND(MEASURE(`Spend`)) FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "7e062be20b5b4212a176b08a223ba9c5",
+        "question": [
+          "What is our overall savings percentage?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT ROUND(MEASURE(`Savings %`),1) FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "61b9eeab869b46c18007f42c94703335",
+        "question": [
+          "Top 10 suppliers by spend?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Supplier`, ROUND(MEASURE(`Spend`)) FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend GROUP BY ALL ORDER BY 2 DESC LIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "4feffe0c40534fcbbc6291ef315ea859",
+        "question": [
+          "How many preferred suppliers do we have?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT COUNT(*) FROM de_cert_classic_catalog.ariba_supplier.suppliers WHERE preferred_flag = true"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "41beff6c607d4f0b81952e29689aee2a",
+        "question": [
+          "How many contracts are due for renewal?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT COUNT(*) FROM de_cert_classic_catalog.ariba_supplier.contracts WHERE status='Renewal Due'"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1f55a5123dad4a73a0e9280b2c126fe3",
+        "question": [
+          "Where can we consolidate suppliers to capture more savings?"
+        ],
+        "answer": [
+          {
+            "format": "SQL"
+          }
+        ],
+        "evaluation_note": [
+          "Agent-mode: must investigate across relevant dimensions, cite supporting queries, and state a specific answer with evidence."
+        ]
+      },
+      {
+        "id": "0842218f76da4061b1229e1d7aef1407",
+        "question": [
+          "What is total supplier spend by category?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Category`, ROUND(MEASURE(`Spend`)) FROM de_cert_classic_catalog.ariba_supplier.mv_supplier_spend GROUP BY ALL ORDER BY 2 DESC"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

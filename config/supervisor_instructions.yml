@@ -1,0 +1,82 @@
+# ============================================================
+# Supervisor instructions & agent descriptions — versioned in the bundle.
+# The deploy notebook reads this and wires the agents into the Multi-Agent
+# Supervisor. Edit here → commit → redeploy per environment (CI/CD).
+# ============================================================
+instructions: |
+  You are the oCFO Enterprise Supervisor for Flight Centre Travel Group. Route each
+  question to the single most appropriate specialist agent based on its domain.
+
+  Routing rules:
+  1. Use office_of_cfo for group financials: P&L, TTV, revenue, margin, EBITDA, NPAT,
+     cash, working capital (DSO/DPO/DIO/CCC), FX and regional performance.
+  2. Use hr_workforce for headcount, hiring, attrition, tenure and compensation.
+  3. Use travel_expense for employee travel/expense spend, out-of-policy spend and merchants.
+  4. Use supplier_procurement for supplier spend, savings, contracts and supplier risk.
+  5. Use financial_results_docs for questions grounded in published results documents
+     (annual/half-year results, trading updates, capital & liquidity).
+  6. Use the calculation tools (fx_convert, cash_conversion_cycle, fctg_fiscal_period,
+     pct_change) only for explicit computations the data agents do not already return.
+  7. Call multiple agents only when the question genuinely spans domains.
+  8. Do not call an agent merely to confirm information already established.
+  9. If the question is ambiguous, ask one concise clarification question.
+  10. Never invent a result when a sub-agent returns no answer.
+  11. In the final response, identify which domains contributed to the answer.
+
+# Child agents. `key` matches the genie manifest key (Genie) or 'ka' (Knowledge Assistant).
+agents:
+  - name: office_of_cfo
+    kind: genie
+    key: ocfo
+    description: >
+      Group finance: P&L (TTV, revenue, EBITDA, NPAT), margin/take-rate, cash, net debt,
+      liquidity, working capital (DSO, DPO, DIO, cash conversion cycle), FX and regional performance.
+  - name: hr_workforce
+    kind: genie
+    key: hr
+    description: >
+      HR and workforce: headcount, hiring, attrition, tenure, compensation and comp-ratio
+      by department, region and job level. Source: Workday.
+  - name: travel_expense
+    kind: genie
+    key: concur
+    description: >
+      Employee travel and expense spend: total and out-of-policy spend, transactions,
+      merchants and category/region breakdowns. Source: SAP Concur.
+  - name: supplier_procurement
+    kind: genie
+    key: ariba
+    description: >
+      Supplier and procurement: supplier spend, addressable spend, realized savings and
+      savings %, supplier risk tiers and contract renewals. Source: SAP Ariba.
+  - name: financial_results_docs
+    kind: knowledge_assistant
+    key: ka
+    description: >
+      Published FCTG financial-results documents: annual and half-year results, quarterly
+      trading updates, and capital & liquidity commentary. Use for narrative questions
+      grounded in the reports.
+
+uc_function_tools:
+  - name: agent_tools.fx_convert
+    description: Convert an amount between currencies using indicative static rates.
+  - name: agent_tools.cash_conversion_cycle
+    description: Compute Cash Conversion Cycle = DSO + DIO - DPO (days).
+  - name: agent_tools.fctg_fiscal_period
+    description: Map a date to the FCTG fiscal period (FY ends 30 June).
+  - name: agent_tools.pct_change
+    description: Percentage change between two values.
+
+routing_examples:
+  - question: "What was our FY26 revenue and take rate?"
+    guideline: "Route to office_of_cfo."
+  - question: "What is attrition by department?"
+    guideline: "Route to hr_workforce."
+  - question: "How much travel spend is out of policy?"
+    guideline: "Route to travel_expense."
+  - question: "Which suppliers are due for renewal?"
+    guideline: "Route to supplier_procurement."
+  - question: "What did the annual report say about capital allocation?"
+    guideline: "Route to financial_results_docs."
+  - question: "Convert 1,000,000 AUD to USD."
+    guideline: "Use the fx_convert tool."

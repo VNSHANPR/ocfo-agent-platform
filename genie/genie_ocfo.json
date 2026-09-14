@@ -1,0 +1,141 @@
+{
+  "version": 2,
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.accounts_payable"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.accounts_receivable"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.cash_forecast_13w"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.city_ttv"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.cost_of_sale_monthly"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.fx_exposure"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.group_pnl"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.marketing_roi"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.regional_performance"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.risk_events"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.strategic_initiatives"
+      },
+      {
+        "identifier": "de_cert_classic_catalog.office_of_cfo.working_capital_monthly"
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "5e1561317b9b4c4db21361913ab432fa",
+        "content": [
+          "This is the Office-of-the-CFO (oCFO) space for Flight Centre Travel Group (FCTG, ASX:FLT, headquartered in Brisbane). All monetary amounts are in AUD. The financial year ends 30 June; FY26 is the latest actuals. Key terms: TTV = Total Transaction Value (gross travel booked); Revenue = FCTG's income/margin on that TTV; Underlying NPAT / PBT / EBITDA are the group's underlying earnings measures. 'Cost per sale' is the cost to service one booking (lower is better); 'basket' is average booking value. FX 'hedge_ratio' is percent hedged; the policy floor is 65% on material pairs and 'open_exposure_aud' is the net unhedged-equivalent exposure. ROI is a multiple (attributed_revenue / spend). Regions are ANZ, Americas, Asia and EMEA. group_pnl has one row per fiscal_year. Prefer concise answers; show the region, city or fiscal year where relevant, and format large AUD amounts in millions or billions. Working capital follows SAP definitions: DSO = days sales outstanding, DPO = days payables outstanding, DIO = days inventory outstanding, CCC = DSO + DIO - DPO (FCTG runs a negative cash conversion cycle because it collects client cash in advance), and net working capital = current assets - current liabilities."
+        ]
+      }
+    ]
+  },
+  "benchmarks": {
+    "questions": [
+      {
+        "id": "01f1adad83de1730947501519f071a02",
+        "question": [
+          "What is the average Days Sales Outstanding for the last 3 months ?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "WITH `latest_3_months` AS (\n",
+              "  SELECT\n",
+              "    `month`,\n",
+              "    `month_idx`,\n",
+              "    `dso`\n",
+              "  FROM\n",
+              "    `de_cert_classic_catalog`.`office_of_cfo`.`working_capital_monthly`\n",
+              "  WHERE\n",
+              "    `month_idx` IS NOT NULL\n",
+              "    AND `dso` IS NOT NULL\n",
+              "  ORDER BY\n",
+              "    `month_idx` DESC\n",
+              "  LIMIT 3\n",
+              ")\n",
+              "SELECT\n",
+              "  AVG(`dso`) AS `avg_dso_last_3_months`\n",
+              "FROM\n",
+              "  `latest_3_months`"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "01f1adabef7f13cdbeb35fc5c8a05139",
+        "question": [
+          "What was the Average Accounts payable month by month for the last year ?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n",
+              "  `month`,\n",
+              "  `ap_total` AS `average_accounts_payable`\n",
+              "FROM\n",
+              "  `de_cert_classic_catalog`.`office_of_cfo`.`working_capital_monthly`\n",
+              "WHERE\n",
+              "  `month_idx` IS NOT NULL\n",
+              "  AND `month` IS NOT NULL\n",
+              "  AND `ap_total` IS NOT NULL\n",
+              "ORDER BY\n",
+              "  `month_idx`"
+            ]
+          }
+        ],
+        "evaluation_note": [
+          "Check that the reponse has values in days month by month"
+        ]
+      },
+      {
+        "id": "01f1adab2af01862bcace2f74ae1e014",
+        "question": [
+          "What was our TTV average over the last 6 months?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n",
+              "  `fiscal_year`,\n",
+              "  `ttv`\n",
+              "FROM\n",
+              "  `de_cert_classic_catalog`.`office_of_cfo`.`group_pnl`\n",
+              "WHERE\n",
+              "  `fiscal_year` IS NOT NULL\n",
+              "ORDER BY\n",
+              "  `fiscal_year` DESC\n",
+              "LIMIT 3"
+            ]
+          }
+        ],
+        "evaluation_note": [
+          "Check that the response include month on month numbers for past 6 months"
+        ]
+      }
+    ]
+  }
+}
