@@ -3,6 +3,12 @@
 Ships the **entire agentic stack** for the Office-of-the-CFO demo as Infrastructure-as-Code,
 so it promotes cleanly across **dev → preprod → prod** workspaces from one project.
 
+> **Requires Databricks CLI ≥ 1.16.x.** The bundle declares Genie spaces as native
+> `genie_spaces` resources under the `direct` engine, which older CLIs don't recognize
+> (v1.0.0 reports `unknown field: genie_spaces` and silently skips them). Check with
+> `databricks version`; upgrade with `brew upgrade databricks` (or reinstall the latest).
+> On a CLI without `genie_spaces` support, use the fallback in `src/deploy_genie_spaces.py`.
+
 ## What it deploys
 
 | Layer | Contents |
