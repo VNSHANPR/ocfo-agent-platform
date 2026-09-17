@@ -70,8 +70,8 @@ include:
 
 targets:
   dev:
-    mode: development
-    default: true
+    mode: development        # note: development mode prefixes names with "[dev <user>]"
+    default: true            # for clean, unprefixed names deploy --target prod (mode: production)
     workspace:
       host: https://fevm-de-cert-classic.cloud.databricks.com
 
