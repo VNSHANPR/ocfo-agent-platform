@@ -64,7 +64,10 @@ databricks bundle deploy --target prod    && databricks bundle run ocfo_agent_pl
   remove the `genie_spaces` block + `engine: direct`, and run the fallback notebook
   `src/deploy_genie_spaces.py` (add it back as the first job task) which create-or-updates the
   spaces via `/api/2.0/genie/spaces`.
-- The Multi-Agent Supervisor is the **managed Agent Bricks MAS** (there is no native DABs
-  resource for it); `create_supervisor.py` creates it via the Agent Bricks API when available,
-  otherwise prints the resolved spec for one-time UI creation. MLflow tracing + evaluation of
-  the supervisor is a companion notebook.
+- The Multi-Agent Supervisor is the **managed Agent Bricks MAS** (no native DABs resource).
+  `create_supervisor.py` now **creates it and attaches all sub-agents/tools via the Agent Bricks
+  REST API** (`POST /api/2.1/supervisor-agents` and `POST /api/2.1/supervisor-agents/{id}/tools`
+  with `tool_type` = genie_space / knowledge_assistant / uc_function). Idempotent: reuses the
+  supervisor by display_name and only attaches missing tools. So `bundle run` stands up the
+  full supervisor — no UI step. (The `terraform/` module remains an alternative for teams that
+  prefer managing the supervisor shell declaratively.) MLflow tracing + evaluation is a companion notebook.
