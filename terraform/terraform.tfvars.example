@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars and fill per environment.
+# Genie ids come from `databricks bundle deploy` (the genie_spaces resources).
+
+profile         = "fevm-de-cert-classic"      # leave "" in CI (use env auth)
+supervisor_name = "oCFO Enterprise Supervisor"
+catalog         = "de_cert_classic_catalog"
+
+genie_ocfo   = "01f1b21080e410e782129813c0659314"
+genie_hr     = "01f1b21080b41eaf8ba84ac2f0578abb"
+genie_concur = "01f1b21080d415a4ae3476d911e6cd55"
+genie_ariba  = "01f1b21080e71d33984f973d4779a6e0"
+ka_tile_id   = ""   # set once the Knowledge Assistant exists
